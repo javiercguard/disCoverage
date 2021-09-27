@@ -18,7 +18,7 @@ requirements:
   host:
     - python
   run:
-    - python >=3.7*
+    - python >=3.7
     - r-base =3.6.0
     - r-data.table =1.14.0
     - r-dplyr =1.0.7
