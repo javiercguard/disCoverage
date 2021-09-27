@@ -165,8 +165,8 @@ for i in range(0, len(bamFiles)):
 		for inputLine in mosdepthInput:
 			mosdepth.stdin.write(inputLine.encode())
 		mosdepthOut, mosdepthErr = mosdepth.communicate() 
-		Will be (None, None), because it's outputing so stdin and stderr
-		but it closes the process nonetheless
+		# Will be (None, None), because it's outputing so stdin and stderr
+		# but it closes the process nonetheless
 
 	print(f"Finished calculating coverage for {sample}", file = sys.stderr)
 
