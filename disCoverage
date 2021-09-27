@@ -173,8 +173,7 @@ for i in range(0, len(bamFiles)):
 
 print("Now running statistical analysis...", file = sys.stderr)
 
-# disCoveragePath = str(os.environ.get('CONDA_PREFIX', "."))
-disCoveragePath = "."
+disCoveragePath = str(os.environ.get('CONDA_PREFIX', "."))
 command = ['Rscript', f'{disCoveragePath}/disCoverage.R', ",".join(indexFiles), ",".join(coverageFiles), ",".join(samples),
 	args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p)]
 # print(" ".join(command))
