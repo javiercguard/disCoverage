@@ -14,7 +14,8 @@ requirements:
     - r-base
   run:
     - python =3.8.5
-    - r-base =3.6.3
+    - r =3.6.0=r36_0
+    r-base=3.6.1=haffb61f_2
     - r-data.table =1.14.0
     - r-dplyr =1.0.7
     - r-readr =2.0.1
