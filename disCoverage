@@ -106,6 +106,8 @@ else:
 #Paths
 outputDir = str(Path.cwd()) if args.outputDir == parser.get_default("outputDir") else args.outputDir
 workingDir = outputDir
+if args.refBed == parser.get_default("refBed"):
+	args.refBed = str(os.environ.get('CONDA_PREFIX', '.')) + "/hg38.bed"
 
 # Remove trailing dots for infix
 infix = args.infix
