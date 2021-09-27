@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+
+import argparse
+import subprocess
+import sys
+from preparePlottingCoverage import writeMosdepthInput
+import itertools
+from pathlib import Path
+import os
+
+import sys
+from types import ModuleType, FunctionType
+from gc import get_referents
+# Custom objects know their class.
+# Function objects seem to know way too much, including modules.
+# Exclude modules as well.
+BLACKLIST = type, ModuleType, FunctionType
+def getsize(obj):
+    """sum size of object & members."""
+    if isinstance(obj, BLACKLIST):
+        raise TypeError('getsize() does not take argument of type: '+ str(type(obj)))
+    seen_ids = set()
+    size = 0
+    objects = [obj]
+    while objects:
+        need_referents = []
+        for obj in objects:
+            if not isinstance(obj, BLACKLIST) and id(obj) not in seen_ids:
+                seen_ids.add(id(obj))
+                size += sys.getsizeof(obj)
+                need_referents.append(obj)
+        objects = get_referents(*need_referents)
+    return size
+
+# 
+# Argument parser
+# 
+
+parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter, add_help=False)
+
+# Arguments for the whole tool
+genArgs = parser.add_argument_group("General arguments")
+
+genArgs.add_argument("-bam", dest = "bamFile", metavar = ("case1.bam", "case2.bam"), nargs = "+", required = True, help = "Path to BAM alignment file")
+genArgs.add_argument("-bed", dest = "bedFile", metavar = ("case1.bed", "case2.bed"),  nargs = "+", required = True, help = "Path to BED file with structural variants' coordinates.")
+genArgs.add_argument("-r", "--referenceBedGenome", dest = "refBed", 
+	metavar = '"BED GENOME"', default = "hg38.bed", 
+	help = "Path to BED file with structural variants.")
+genArgs.add_argument("-t", "--threads", dest = "threads", metavar="INT", type = int, default = 1, help = "Number of threads to use for coverage analysis (and for mosdepth execution, for that, it is capped at 4, the optimal value).")
+
+# Arguments for naming the output
+outArgs = parser.add_argument_group("Output naming arguments")
+
+outArgs.add_argument("-p", dest = "samplePrefix", metavar = "PREFIX", default = "\"P\"", help = "Prefix to refer for files: <PREFIX>.<infix>.bed.gz, etc.")
+outArgs.add_argument("-id", dest = "sample", metavar = ("S1", "S2"),  nargs = "+", help = "Instead of using a prefix and auto-numbering, you can your own, e. g., \"S3 S4\".")
+outArgs.add_argument("-i", "--infix", dest = "infix", metavar = "<infix>", default = "discoverage", help = "Infix for filenames: <PREFIX>1.<infix>...")
+outArgs.add_argument("-o", "--out", dest = "outputDir", 
+	metavar = "DIR", default = "Current dir", 
+	help = "Path to output dir")
+
+# For running Mosdepth
+mosArgs = parser.add_argument_group("Coverage calculation")
+mosArgs.add_argument("--mosdepth-threads", dest = "mosdepthThreads", metavar = '"INT <= 4"',
+	default = "1 or \"-t\" value", 
+	help = "Number of threads for mosdepth to use. If the general \"-t\" is used, there is no need to use this. Max value is 4")
+
+# For plotting and coverage anlysis
+statOptions = parser.add_argument_group("Statistical and plotting options")
+statOptions.add_argument("--skip-plotting", dest = "doPlots", default = "Don't skip plotting", action = 'store_false', help = "Use if you don't want to generate plots.")
+statOptions.add_argument("-c", "--condition", dest = "condition", metavar = "condition", help = 'If not empty adds "(<condition>)" to plot title')
+#p thresholds
+statOptions.add_argument("-p-limits", dest = "p", metavar = ("p1", "p2", "p3"), nargs = 3, default = ("1e-1000", "1e-3117", "1e-13482"),
+	help = '''List of p-value's thresholds for asterisks''')
+
+# Help in a different group
+miscArgs = parser.add_argument_group("Other")
+miscArgs.add_argument("-h", "--help", dest = "help", action = "help", help = "Shows this help message and exits." )
+
+args = parser.parse_args()
+
+# 
+# Process arguments: apply default values, etc.
+# 
+
+# Files and prefixes
+outputDir = args.outputDir
+bamFiles = args.bamFile
+bedFiles = args.bedFile
+
+if len(bamFiles) != len(bedFiles):
+	print("Number of BAM and BED files do not match. Terminating.", file = sys.stderr)
+	sys.exit()
+
+# Remove additional brackets from default prefix
+if args.samplePrefix == parser.get_default("samplePrefix"):
+	args.samplePrefix = "P"
+
+if not args.sample:
+	samples = [args.samplePrefix + str(i) for i in range(1, len(bamFiles) + 1)]
+else:
+	samples = args.sample.replace(" ", "").split(",")
+	if len(bamFiles) != len(bedFiles):
+		print("Number of sample ids do not match with BAM (or BED) files. Terminating.", file = sys.stderr)
+		sys.exit()
+
+#Paths
+outputDir = str(Path.cwd()) if args.outputDir == parser.get_default("outputDir") else args.outputDir
+workingDir = outputDir
+
+# Remove trailing dots for infix
+infix = args.infix
+if infix[0] == ".":
+	infix = infix[1:]
+if infix[len(infix) - 1] == ".":
+	infix = infix[0:len(infix) - 1]
+
+#Mosdepth threads
+mosdepthThreads = args.mosdepthThreads
+if mosdepthThreads == parser.get_default("mosdepthThreads"):
+	mosdepthThreads = 1
+if args.threads > mosdepthThreads: # We use the same number of threads than the general application, if its higher
+	mosdepthThreads = args.threads
+if mosdepthThreads > 4: # only up to four
+	mosdepthThreads = 4
+
+# Arguments to disCoverage.R
+doPlots = "T" if args.doPlots == parser.get_default("doPlots") else "F"
+condition = "no-condition-argument-passed"
+if args.condition != parser.get_default("condition"):
+	condition = args.condition
+
+# 
+# Main loop
+# 
+
+indexFiles = [] # These are passed to R
+coverageFiles = []
+
+for i in range(0, len(bamFiles)):
+
+	# Get this case's files
+
+	sample = samples[i]
+	bedFile = bedFiles[i]
+	bamFile = bamFiles[i]
+
+	idxFile = workingDir + "/" + sample + "." + infix + ".discoverageIdx.bed"
+	indexFiles.append(idxFile)
+
+	coverageFiles.append(f"{outputDir}/{sample}.{infix}.regions.bed.gz")
+
+	# 
+	# Calculate coverage
+	# 
+
+	print(f"Calculating coverage for {sample}...", file = sys.stderr)
+
+	mosdepthInput = writeMosdepthInput(args.refBed, bedFile, outputDir, sample, infix, idxFile)
+
+	mosdepthCommand = ["mosdepth", "-n", "-t", str(mosdepthThreads), "-b", "-", 
+		f"{outputDir}/{sample}.{infix}", f"{bamFile}"]
+	
+	with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE, \
+		stdout = sys.stdout, stderr = sys.stderr) as mosdepth:
+		for inputLine in mosdepthInput:
+			mosdepth.stdin.write(inputLine.encode())
+		mosdepthOut, mosdepthErr = mosdepth.communicate() 
+		Will be (None, None), because it's outputing so stdin and stderr
+		but it closes the process nonetheless
+
+	print(f"Finished calculating coverage for {sample}", file = sys.stderr)
+
+
+print("Now running statistical analysis...", file = sys.stderr)
+
+# disCoveragePath = str(os.environ.get('CONDA_PREFIX', "."))
+disCoveragePath = "."
+command = ['Rscript', f'{disCoveragePath}/disCoverage.R', ",".join(indexFiles), ",".join(coverageFiles), ",".join(samples),
+	args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p)]
+# print(" ".join(command))
+subprocess.run(command)
+# sys.exit()

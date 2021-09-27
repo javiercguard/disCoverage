@@ -1,0 +1,7 @@
+*bam
+*bam.bai
+*bed
+*csv
+.Rhistory
+__pycache__
+test/*
