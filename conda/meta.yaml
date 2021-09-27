@@ -11,8 +11,10 @@ source:
 requirements:
   host:
     - python =3.8.5
+    - r-base
   run:
     - python =3.8.5
+    - r-base
     - r-data.table =1.14.0
     - r-dplyr =1.0.7
     - r-readr =2.0.1
