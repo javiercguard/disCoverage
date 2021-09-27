@@ -18,4 +18,5 @@ requirements:
     - r-readr =2.0.1
     - r-rmpfr =0.8_4
     - r-stringi >=1.4.3
+    - mosdepth
   
