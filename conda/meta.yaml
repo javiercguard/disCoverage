@@ -1,4 +1,10 @@
-name: discoverage
+{% set name = "disCoverage" %}
+{% set version = "0.1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
 source:
   path: ../
 channels:
