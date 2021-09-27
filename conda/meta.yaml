@@ -8,12 +8,6 @@ package:
 source:
   path: ..
 
-channels:
-  - r
-  - conda-forge
-  - bioconda
-  - defaults
-
 requirements:
   host:
     - python
