@@ -8,6 +8,8 @@ library(stringi, quietly = T)
 library(parallel)
 library(Rmpfr, warn.conflicts = F, quietly = T)
 
+options(error = function() {traceback(2, max.lines=10); if(!interactive()) quit(save="no", status=1, runLast=T)})
+
 # setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 cmToInches = function (cm) { # Thanks grDevices...
@@ -37,7 +39,7 @@ if (condition == "no-condition-argument-passed") {
     condition = ""
 }
 
-if (T) {
+if (F) {
     cat("indexFiles", indexFiles, "\n")
     cat("coverageFiles:", coverageFiles, "\n")
     cat("samples:", samples, "\n")
@@ -75,14 +77,15 @@ resultsTable = do.call(bind_rows,
                     
                     svNameShort = stri_replace(svName, regex = "(SV_.*)_.*", replacement = "$1")
                     print(paste0("Reading coverage for ", sample, " : ", svName))
+                    fReadCommand = paste0("tabix ", coverageFile, " ", 
+                                          svRelevantRegion$chr, ":", 
+                                          format(svRelevantRegion$start, scientific = F), 
+                                          "-",
+                                          format(svRelevantRegion$end, scientific = F),
+                                          " | grep -E \"(", svNameShort,"[+_-]|[^\t]*\t0\t)\"" )
                     coverage = tibble(
                         fread(
-                            cmd = paste0("tabix ", coverageFile, " ", 
-                                         svRelevantRegion$chr, ":", 
-                                         format(svRelevantRegion$start, scientific = F), 
-                                         "-",
-                                         format(svRelevantRegion$end, scientific = F),
-                                         " | grep -E \"(", svNameShort,"[+-_]|[^\t]*\t0\t)\"" ),
+                            cmd = fReadCommand,
                             col.names = c("chr", "start", "end", "name", "coverage"),
                             showProgress = T)
                     )
@@ -107,7 +110,7 @@ resultsTable = do.call(bind_rows,
                     
                     asterisks = (
                         if (pValue >= mpfr(pLimits[1], 100) | is.na(pValue)) '-'
-                        else if (pValue > pLimits[2]) '*' 
+                        else if (pValue > mpfr(pLimits[2], 100)) '*' 
                         else if (pValue > mpfr(pLimits[3], 100)) '**' 
                         else '***'
                     )
