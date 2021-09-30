@@ -3,7 +3,7 @@
 import argparse
 import subprocess
 import sys
-from preparePlottingCoverage import writeMosdepthInput
+from preparePlottingCoverage import writeMosdepthInput, writeIndexFile
 import itertools
 from pathlib import Path
 import os
@@ -157,9 +157,10 @@ for i in range(0, len(bamFiles)):
 
 	print(f"Calculating coverage for {sample}...", file = sys.stderr)
 
-	mosdepthInput = writeMosdepthInput(args.refBed, bedFile, outputDir, sample, infix, idxFile)
+	writeIndexFile (args.refBed, bedFile, idxFile)
+	mosdepthInput = writeMosdepthInput(args.refBed, bedFile, outputDir, sample, infix)
 
-	mosdepthCommand = ["mosdepth", "-n", "-t", str(mosdepthThreads), "-b", "-", 
+	mosdepthCommand = ["mosdepth", "-n", "-t", str(mosdepthThreads), "-Q", "20" "-b", "-", 
 		f"{outputDir}/{sample}.{infix}", f"{bamFile}"]
 	
 	with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE, \
@@ -178,6 +179,4 @@ print("Now running statistical analysis...", file = sys.stderr)
 disCoveragePath = str(os.environ.get('CONDA_PREFIX', "."))
 command = ['Rscript', f'{disCoveragePath}/disCoverage.R', ",".join(indexFiles), ",".join(coverageFiles), ",".join(samples),
 	args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p)]
-# print(" ".join(command))
 subprocess.run(command)
-# sys.exit()
