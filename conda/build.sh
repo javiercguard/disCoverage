@@ -1,3 +1,4 @@
-echo $PYTHON
+echo "Installing disCoverage"
 $PYTHON setup.py install
-conda install mosdepth
+cp hg38.bed $CONDA_PREFIX/
+cp disCoverage.R $CONDA_PREFIX/
