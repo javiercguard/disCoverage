@@ -24,12 +24,9 @@ def printRanges (chrName, start, end, dist, step, svN, chrs, backwards = 0, insi
 			yield f"{chrName}\t{end + i}\t{end + i + step}\t" + (f"SV_{svN}+{'{:,}'.format(i + step)}" if not inside else \
 				f"SV_{svN}_in_{'{:,}'.format(i + step)}")
 
-def writeMosdepthInput (refGenome, inputBed, workingDir, sample, infix, idxFile):
-	"""
-	Creates a bed file as side effect and yields a list of str
-	refGenome: genome.bed
-	"""
-	chrs = {} # To check we dont go out of range
+def writeIndexFile (refGenome, inputBed, idxFile):
+	chrs = {}
+	
 	with open(refGenome) as refGenome:
 		for line in refGenome.readlines():
 			chrName, start, end = line.rstrip().split("\t")[0:3]
@@ -62,8 +59,47 @@ def writeMosdepthInput (refGenome, inputBed, workingDir, sample, infix, idxFile)
 			svN += 1
 		idx.write("".join(idxContent))
 
+		return idxContent
+
+def writeMosdepthInput (refGenome, inputBed, workingDir, sample, infix):
+	"""
+	Creates a bed file as side effect and yields a list of str
+	refGenome: genome.bed
+	"""
+	chrs = {} # To check we dont go out of range
+	with open(refGenome) as refGenome:
+		for line in refGenome.readlines():
+			chrName, start, end = line.rstrip().split("\t")[0:3]
+			chrs[chrName] = int(end) #Start is always 0 so no point in storing it
+
+	idxContent = []
+	with open(inputBed) as f:
+		svN = 0
+
+		for line in f.readlines():
+			line = line.rstrip()
+			lineFields = line.split("\t")
+
+			chrName, svStart, svEnd = lineFields[0:3]
+			if chrName not in chrs.keys():
+				continue
+			svType = ""
+			if (len(lineFields) >= 4):
+				svType = lineFields[3]
+
+			svCode = "" # Will be similar to "SV_1_DEL"
+			if not svType:
+				svCode = f"SV_{svN}"
+			else:
+				svCode  = f"SV_{str(svN) + '_' + svType}"
+
+			# For index file
+			svFullRange = f"{chrName}\t{int(svStart) - 1000000}\t{int(svEnd) + 1000000}\t{svCode}\n"
+			idxContent.append(svFullRange)
+			svN += 1
+
 	def linesGenerator(): # So the function can have the side effect of witing the index file
-		with open(inputBed) as f, open(idxFile, "w") as idx:
+		with open(inputBed) as f:
 			svN = 0
 
 			for chrom, end in chrs.items():
