@@ -160,7 +160,7 @@ for i in range(0, len(bamFiles)):
 	writeIndexFile (args.refBed, bedFile, idxFile)
 	mosdepthInput = writeMosdepthInput(args.refBed, bedFile, outputDir, sample, infix)
 
-	mosdepthCommand = ["mosdepth", "-n", "-t", str(mosdepthThreads), "-Q", "20" "-b", "-", 
+	mosdepthCommand = ["mosdepth", "-n", "-t", str(mosdepthThreads), "-Q", "20", "-b", "-", 
 		f"{outputDir}/{sample}.{infix}", f"{bamFile}"]
 	
 	with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE, \
