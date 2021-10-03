@@ -112,7 +112,7 @@ else:
 outputDir = str(Path.cwd()) if args.outputDir == parser.get_default("outputDir") else args.outputDir
 workingDir = outputDir
 if args.refBed == parser.get_default("refBed"):
-	args.refBed = scriptPath + "/hg38.bed"
+	args.refBed = os.environ.get("CONDA_PREFIX", ".") + "/hg38.bed"
 
 # Remove trailing dots for infix
 infix = args.infix
@@ -170,22 +170,24 @@ for i in range(0, len(bamFiles)):
 	mosdepthCommand = ["mosdepth", "-t", str(mosdepthThreads), "-Q", "20", "-b", "-", 
 		f"{outputDir}/{sample}.{infix}", f"{bamFile}"]
 	
-	with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE) as mosdepth:
-		for inputLine in mosdepthInput:
-			try:
-				mosdepth.stdin.write(inputLine.encode())
-			except BrokenPipeError as e:
-				pass
-		mosdepthOut, mosdepthErr = mosdepth.communicate() 
-		# Will be (None, None), because it's outputing so stdin and stderr
-		# but it closes the process nonetheless
+	# with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE) as mosdepth:
+	# 	for inputLine in mosdepthInput:
+	# 		try:
+	# 			mosdepth.stdin.write(inputLine.encode())
+	# 		except BrokenPipeError as e:
+	# 			pass
+	# 	mosdepthOut, mosdepthErr = mosdepth.communicate() 
+	# 	# Will be (None, None), because it's outputing so stdin and stderr
+	# 	# but it closes the process nonetheless
 
 	print(f"Finished calculating coverage for {sample}", file = sys.stderr)
 
 
 print("Now running statistical analysis...", file = sys.stderr)
 
-command = ['Rscript', f'{scriptPath}/disCoverage.R', ",".join(indexFiles), ",".join(coverageFiles), ",".join(samples),
+disCoveragePath = os.environ.get("CONDA_PREFIX", ".")
+disCoveragePath = "."
+command = ['Rscript', f'{disCoveragePath}/disCoverage.R', ",".join(indexFiles), ",".join(coverageFiles), ",".join(samples),
 	args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p), ",".join(coveragePlotFiles)]
-# print(command)
-subprocess.run(command)
+print(" ".join(command))
+# subprocess.run(command)

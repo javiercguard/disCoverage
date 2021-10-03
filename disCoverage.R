@@ -73,6 +73,16 @@ resultsTable = do.call(bind_rows,
         bind_rows, lapply(chrsOfInterest, function (chrOfInterest) {
             svs = index[chr == chrOfInterest, name] %>% stri_sort(numeric = T)
             
+            print(paste0("Reading coverage for ", sample, " : ", chrOfInterest))
+            fReadCommand = paste0("tabix ", coverageFile, " ", 
+                                  chrOfInterest)
+            coverage = fread(
+                cmd = fReadCommand,
+                col.names = c("chr", "start", "end", "coverage"),
+                showProgress = T)
+            print(paste0("Finished reading coverage for ", sample, " : ", chrOfInterest))
+            coverage[, start := start + 1] # BED start coords are 0-based, lets change them to 1-based
+            
             do.call(bind_rows,
                     mclapply(svs, function (svName) {
                         # svName = "SV_0_DEL"
@@ -81,15 +91,6 @@ resultsTable = do.call(bind_rows,
                         svRelevantRegion = index[index$name == svName, ]
                         
                         svNameShort = stri_replace(svName, regex = "(SV_.*)_.*", replacement = "$1")
-                        print(paste0("Reading coverage for ", sample, " : ", chrOfInterest))
-                        fReadCommand = paste0("tabix ", coverageFile, " ", 
-                                              svRelevantRegion$chr)
-                        coverage = fread(
-                            cmd = fReadCommand,
-                            col.names = c("chr", "start", "end", "coverage"),
-                            showProgress = T)
-                        print(paste0("Finished reading coverage for ", sample, " : ", chrOfInterest))
-                        coverage[, start := start + 1] # BED start coords are 0-based, lets change them to 1-based
 
                         svStart = svRelevantRegion$start + 1e6
                         svEnd = svRelevantRegion$end - 1e6
@@ -108,6 +109,8 @@ resultsTable = do.call(bind_rows,
                         after[1, "start" := max(after[1, "start"], svEnd)]
                         after[.N, "end" := min(after[.N, "end"], svRelevantRegion$end)]
                         afterCovs = rep.int(after$coverage, (after$end - after$start + 1))
+                        
+                        print("finished coverage processing")
 
                         # Let's perform the t-test
                         test = t.test(inSvCovs, c(beforeCovs, afterCovs))
@@ -123,6 +126,8 @@ resultsTable = do.call(bind_rows,
                             else if (pValue > mpfr(pLimits[3], 100)) '**'
                             else '***'
                         )
+                        
+                        print("finished t-test")
                         
                         # plotting: a side-effect
                         if (do.plots) {
@@ -206,9 +211,10 @@ resultsTable = do.call(bind_rows,
                                 par(moo)
                                 dev.off()}
                         }
+                        meanCoverageSV = mean(inSvCovs)
                         # return value: a row for the tibble
                         pValueFormatted = formatMpfr(pValue)
-                        meanCoefficient = sv$coverage / mean(c(beforeCovs, afterCovs))
+                        meanCoefficient = meanCoverageSV / mean(c(beforeCovs, afterCovs))
                         concordance = (if (stri_detect_fixed(tolower(svName), pattern = c("del", "dup"), max_count = 1)[1]) {
                             if (stri_detect_fixed(tolower(svName), pattern = "del")) {
                                 if (meanCoefficient <= 0.6) {
@@ -226,8 +232,8 @@ resultsTable = do.call(bind_rows,
                         significant = (if (concordance == "yes") {asterisks} 
                                        else if (concordance == "no") {"-"}
                                        else {"NA"})
-                        list(sample = sample, sv = svName, coords = paste0(sv$chr, ":", sv$start, "-", sv$end),
-                             meanCoverageSV = sv$coverage,
+                        list(sample = sample, sv = svName, coords = paste0(svRelevantRegion$chr, ":", svStart, "-", svEnd),
+                             meanCoverageSV = meanCoverageSV,
                              meanCoverageRegion = mean(c(beforeCovs, afterCovs)),
                              meanCoefficient = meanCoefficient,
                              probLog = probLog,
