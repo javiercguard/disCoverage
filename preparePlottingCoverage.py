@@ -135,12 +135,12 @@ def writeMosdepthInput (refGenome, inputBed, workingDir, sample, infix):
 				else:
 					yield '\t'.join([chrName, svStart, svEnd]) + f"\t{svCode}\n" # Avg. coverage of SV
 
-				for x in printRanges(chrName, svStart, svEnd, 1e6, 1, svN, chrs, backwards = 1): # Before the SV
-					yield x + "\n"
-				for x in printRanges(chrName, svStart, svEnd, 0, 1, svN, chrs, inside = 1): # Inside the SV, dist is ignored, thus the 0
-					yield x + "\n"
-				for x in printRanges(chrName, svStart, svEnd, 1e6, 1, svN, chrs): # After the SV
-					yield x + "\n"
+				# for x in printRanges(chrName, svStart, svEnd, 1e6, 1, svN, chrs, backwards = 1): # Before the SV
+				# 	yield x + "\n"
+				# for x in printRanges(chrName, svStart, svEnd, 0, 1, svN, chrs, inside = 1): # Inside the SV, dist is ignored, thus the 0
+				# 	yield x + "\n"
+				# for x in printRanges(chrName, svStart, svEnd, 1e6, 1, svN, chrs): # After the SV
+				# 	yield x + "\n"
 
 				# For plotting
 				for x in printRanges(chrName, svStart, svEnd, 1e6, 1e4, svN, chrs, backwards = 1): # Before the SV

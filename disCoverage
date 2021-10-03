@@ -31,6 +31,11 @@ def getsize(obj):
                 need_referents.append(obj)
         objects = get_referents(*need_referents)
     return size
+try:
+	scriptPath = os.path.dirname(os.path.realpath(__file__))
+except:
+	print("Don't run disCoverage on an interactive environment...")
+	sys.exit()
 
 # 
 # Argument parser
@@ -107,7 +112,7 @@ else:
 outputDir = str(Path.cwd()) if args.outputDir == parser.get_default("outputDir") else args.outputDir
 workingDir = outputDir
 if args.refBed == parser.get_default("refBed"):
-	args.refBed = str(os.environ.get('CONDA_PREFIX', '.')) + "/hg38.bed"
+	args.refBed = scriptPath + "/hg38.bed"
 
 # Remove trailing dots for infix
 infix = args.infix
@@ -137,6 +142,7 @@ if args.condition != parser.get_default("condition"):
 
 indexFiles = [] # These are passed to R
 coverageFiles = []
+coveragePlotFiles = []
 
 for i in range(0, len(bamFiles)):
 
@@ -149,7 +155,8 @@ for i in range(0, len(bamFiles)):
 	idxFile = workingDir + "/" + sample + "." + infix + ".discoverageIdx.bed"
 	indexFiles.append(idxFile)
 
-	coverageFiles.append(f"{outputDir}/{sample}.{infix}.regions.bed.gz")
+	coverageFiles.append(f"{outputDir}/{sample}.{infix}.per-base.bed.gz")
+	coveragePlotFiles.append(f"{outputDir}/{sample}.{infix}.regions.bed.gz")
 
 	# 
 	# Calculate coverage
@@ -160,13 +167,15 @@ for i in range(0, len(bamFiles)):
 	writeIndexFile (args.refBed, bedFile, idxFile)
 	mosdepthInput = writeMosdepthInput(args.refBed, bedFile, outputDir, sample, infix)
 
-	mosdepthCommand = ["mosdepth", "-n", "-t", str(mosdepthThreads), "-Q", "20", "-b", "-", 
+	mosdepthCommand = ["mosdepth", "-t", str(mosdepthThreads), "-Q", "20", "-b", "-", 
 		f"{outputDir}/{sample}.{infix}", f"{bamFile}"]
 	
-	with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE, \
-		stdout = sys.stdout, stderr = sys.stderr) as mosdepth:
+	with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE) as mosdepth:
 		for inputLine in mosdepthInput:
-			mosdepth.stdin.write(inputLine.encode())
+			try:
+				mosdepth.stdin.write(inputLine.encode())
+			except BrokenPipeError as e:
+				pass
 		mosdepthOut, mosdepthErr = mosdepth.communicate() 
 		# Will be (None, None), because it's outputing so stdin and stderr
 		# but it closes the process nonetheless
@@ -176,7 +185,7 @@ for i in range(0, len(bamFiles)):
 
 print("Now running statistical analysis...", file = sys.stderr)
 
-disCoveragePath = str(os.environ.get('CONDA_PREFIX', "."))
-command = ['Rscript', f'{disCoveragePath}/disCoverage.R', ",".join(indexFiles), ",".join(coverageFiles), ",".join(samples),
-	args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p)]
+command = ['Rscript', f'{scriptPath}/disCoverage.R', ",".join(indexFiles), ",".join(coverageFiles), ",".join(samples),
+	args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p), ",".join(coveragePlotFiles)]
+# print(command)
 subprocess.run(command)
