@@ -71,6 +71,7 @@ resultsTable = do.call(bind_rows,
         
         do.call(
         bind_rows, lapply(chrsOfInterest, function (chrOfInterest) {
+            # chrOfInterest = "chr15"
             svs = index[chr == chrOfInterest, name] %>% stri_sort(numeric = T)
             
             print(paste0("Reading coverage for ", sample, " : ", chrOfInterest))
@@ -86,16 +87,18 @@ resultsTable = do.call(bind_rows,
             do.call(bind_rows,
                     mclapply(svs, function (svName) {
                         # svName = "SV_0_DEL"
+                        # svName = "SV_15_DEL"
                         print(paste(sample, svName))
                         
                         svRelevantRegion = index[index$name == svName, ]
+                        svRelevantRegion$start = svRelevantRegion$start + 1
                         
                         svNameShort = stri_replace(svName, regex = "(SV_.*)_.*", replacement = "$1")
 
                         svStart = svRelevantRegion$start + 1e6
                         svEnd = svRelevantRegion$end - 1e6
 
-                        before = coverage[start >= svRelevantRegion$start & start < svStart ]
+                        before = coverage[end >= svRelevantRegion$start & start < svStart ]
                         before[1, "start" := max(before[1, "start"], svRelevantRegion$start)]
                         before[.N, "end" := min(before[.N, "end"], svStart)]
                         beforeCovs = rep.int(before$coverage, (before$end - before$start + 1))
@@ -110,10 +113,8 @@ resultsTable = do.call(bind_rows,
                         after[.N, "end" := min(after[.N, "end"], svRelevantRegion$end)]
                         afterCovs = rep.int(after$coverage, (after$end - after$start + 1))
                         
-                        print("finished coverage processing")
-
                         # Let's perform the t-test
-                        test = t.test(inSvCovs, c(beforeCovs, afterCovs))
+                        test = t.test(x = inSvCovs, y = c(beforeCovs, afterCovs))
                         t = test$statistic[[1]]
                         df = test$parameter[[1]]
 
@@ -126,8 +127,6 @@ resultsTable = do.call(bind_rows,
                             else if (pValue > mpfr(pLimits[3], 100)) '**'
                             else '***'
                         )
-                        
-                        print("finished t-test")
                         
                         # plotting: a side-effect
                         if (do.plots) {

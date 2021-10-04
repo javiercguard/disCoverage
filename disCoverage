@@ -170,15 +170,15 @@ for i in range(0, len(bamFiles)):
 	mosdepthCommand = ["mosdepth", "-t", str(mosdepthThreads), "-Q", "20", "-b", "-", 
 		f"{outputDir}/{sample}.{infix}", f"{bamFile}"]
 	
-	# with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE) as mosdepth:
-	# 	for inputLine in mosdepthInput:
-	# 		try:
-	# 			mosdepth.stdin.write(inputLine.encode())
-	# 		except BrokenPipeError as e:
-	# 			pass
-	# 	mosdepthOut, mosdepthErr = mosdepth.communicate() 
-	# 	# Will be (None, None), because it's outputing so stdin and stderr
-	# 	# but it closes the process nonetheless
+	with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE) as mosdepth:
+		for inputLine in mosdepthInput:
+			try:
+				mosdepth.stdin.write(inputLine.encode())
+			except BrokenPipeError as e:
+				pass
+		mosdepthOut, mosdepthErr = mosdepth.communicate() 
+		# Will be (None, None), because it's outputing so stdin and stderr
+		# but it closes the process nonetheless
 
 	print(f"Finished calculating coverage for {sample}", file = sys.stderr)
 
@@ -186,8 +186,8 @@ for i in range(0, len(bamFiles)):
 print("Now running statistical analysis...", file = sys.stderr)
 
 disCoveragePath = os.environ.get("CONDA_PREFIX", ".")
-disCoveragePath = "."
+# disCoveragePath = "."
 command = ['Rscript', f'{disCoveragePath}/disCoverage.R', ",".join(indexFiles), ",".join(coverageFiles), ",".join(samples),
 	args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p), ",".join(coveragePlotFiles)]
-print(" ".join(command))
-# subprocess.run(command)
+# print(" ".join(command))
+subprocess.run(command)
