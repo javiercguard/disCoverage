@@ -65,6 +65,10 @@ outArgs.add_argument("-o", "--out", dest = "outputDir",
 
 # For running Mosdepth
 mosArgs = parser.add_argument_group("Coverage calculation")
+mosArgs.add_argument("--skip-per-base", dest = "skipPerBase", default = False, action = "store_true",
+	help = "Skip Mosdepth's per base output. Only use when the per-base output is already available. Always use with '-covs' (see below).")
+mosArgs.add_argument("-covs", dest = "covs", nargs = '*', metavar = ("<FILE1>.per-base.bed.gz", "<FILE2>.per-base.bed.gz"),
+	help = "Per-base coverage files generated with Mosdepth (<name>.per-base.bed.gz). Use if they have already been generated previously to save time.")
 mosArgs.add_argument("--mosdepth-threads", dest = "mosdepthThreads", metavar = '"INT <= 4"',
 	default = "1 or \"-t\" value", 
 	help = "Number of threads for mosdepth to use. If the general \"-t\" is used, there is no need to use this. Max value is 4")
@@ -91,10 +95,19 @@ args = parser.parse_args()
 outputDir = args.outputDir
 bamFiles = args.bamFile
 bedFiles = args.bedFile
+covFiles = args.covs
 
 if len(bamFiles) != len(bedFiles):
 	print("Number of BAM and BED files do not match. Terminating.", file = sys.stderr)
 	sys.exit()
+
+if args.skipPerBase:
+	if not covFiles:
+		print("When using --skip-per-base please supply coverage files with -covs. Terminating.", file = sys.stderr)
+		sys.exit()
+	if len(covFiles) != len(bamFiles):
+		print("Number of BAM and per.base.bed.gz files do not match. Terminating.", file = sys.stderr)
+		sys.exit()
 
 # Remove additional brackets from default prefix
 if args.samplePrefix == parser.get_default("samplePrefix"):
@@ -141,7 +154,7 @@ if args.condition != parser.get_default("condition"):
 # 
 
 indexFiles = [] # These are passed to R
-coverageFiles = []
+coverageFiles = [] if not covFiles else covFiles
 coveragePlotFiles = []
 
 for i in range(0, len(bamFiles)):
@@ -154,8 +167,8 @@ for i in range(0, len(bamFiles)):
 
 	idxFile = workingDir + "/" + sample + "." + infix + ".discoverageIdx.bed"
 	indexFiles.append(idxFile)
-
-	coverageFiles.append(f"{outputDir}/{sample}.{infix}.per-base.bed.gz")
+	if not covFiles:
+		coverageFiles.append(f"{outputDir}/{sample}.{infix}.per-base.bed.gz")
 	coveragePlotFiles.append(f"{outputDir}/{sample}.{infix}.regions.bed.gz")
 
 	# 
@@ -165,9 +178,12 @@ for i in range(0, len(bamFiles)):
 	print(f"Calculating coverage for {sample}...", file = sys.stderr)
 
 	writeIndexFile (args.refBed, bedFile, idxFile)
-	mosdepthInput = writeMosdepthInput(args.refBed, bedFile, outputDir, sample, infix)
+	mosdepthInput = writeMosdepthInput(args.refBed, bedFile, outputDir, sample, infix, doPlots)
 
-	mosdepthCommand = ["mosdepth", "-t", str(mosdepthThreads), "-Q", "20", "-b", "-", 
+	mosdepthCommand = ["mosdepth"]
+	if args.skipPerBase:
+		mosdepthCommand.append("-n")
+	mosdepthCommand += ["-t", str(mosdepthThreads), "-Q", "20", "-b", "-", 
 		f"{outputDir}/{sample}.{infix}", f"{bamFile}"]
 	
 	with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE) as mosdepth:

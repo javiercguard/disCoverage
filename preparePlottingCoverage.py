@@ -61,7 +61,7 @@ def writeIndexFile (refGenome, inputBed, idxFile):
 
 		return idxContent
 
-def writeMosdepthInput (refGenome, inputBed, workingDir, sample, infix):
+def writeMosdepthInput (refGenome, inputBed, workingDir, sample, infix, doPlots):
 	"""
 	Creates a bed file as side effect and yields a list of str
 	refGenome: genome.bed
@@ -143,12 +143,13 @@ def writeMosdepthInput (refGenome, inputBed, workingDir, sample, infix):
 				# 	yield x + "\n"
 
 				# For plotting
-				for x in printRanges(chrName, svStart, svEnd, 1e6, 1e4, svN, chrs, backwards = 1): # Before the SV
-					yield x + "_plot\n"
-				for x in printRanges(chrName, svStart, svEnd, 0, 1e4, svN, chrs, inside = 1): # Inside the SV, dist is ignored, thus the 0
-					yield x + "_plot\n"
-				for x in printRanges(chrName, svStart, svEnd, 1e6, 1e4, svN, chrs): # After the SV
-					yield x + "_plot\n"
+				if doPlots:
+					for x in printRanges(chrName, svStart, svEnd, 1e6, 1e4, svN, chrs, backwards = 1): # Before the SV
+						yield x + "_plot\n"
+					for x in printRanges(chrName, svStart, svEnd, 0, 1e4, svN, chrs, inside = 1): # Inside the SV, dist is ignored, thus the 0
+						yield x + "_plot\n"
+					for x in printRanges(chrName, svStart, svEnd, 1e6, 1e4, svN, chrs): # After the SV
+						yield x + "_plot\n"
 
 				svN += 1
 
