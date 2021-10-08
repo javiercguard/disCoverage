@@ -214,20 +214,33 @@ resultsTable = do.call(bind_rows,
                         # return value: a row for the tibble
                         pValueFormatted = formatMpfr(pValue)
                         meanCoefficient = meanCoverageSV / mean(c(beforeCovs, afterCovs))
-                        concordance = (if (stri_detect_fixed(tolower(svName), pattern = c("del", "dup"), max_count = 1)[1]) {
-                            if (stri_detect_fixed(tolower(svName), pattern = "del")) {
-                                if (meanCoefficient <= 0.6) {
-                                    "yes"
+                        concordance = (
+                            if (is.na(meanCoefficient) | is.nan(meanCoefficient))
+                                "NA"
+                            else {
+                                if (stri_detect_fixed(tolower(svName), pattern = c("del", "dup"), max_count = 1)[1]) {
+                                    if (stri_detect_fixed(tolower(svName), pattern = "del")) { # deletions
+                                        if (meanCoefficient <= 0.6) {
+                                            "yes"
+                                        }
+                                        else {
+                                            "no"
+                                        }
+                                    }
+                                    else { # duplications
+                                        if (meanCoefficient >= 1.4) {
+                                            "yes"
+                                        }
+                                        else {
+                                            "no"
+                                        }
+                                    }
+                                } 
+                                else {
+                                    "NA"
                                 }
-                                else {"no"}
                             }
-                            else { # duplications
-                                if (meanCoefficient >= 1.4) {
-                                    "yes"
-                                }
-                                else {"no"}
-                            }
-                        } else {"NA"})
+                        )
                         significant = (if (concordance == "yes") {asterisks} 
                                        else if (concordance == "no") {"-"}
                                        else {"NA"})
