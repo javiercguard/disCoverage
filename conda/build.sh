@@ -1,4 +1,5 @@
 echo "Installing disCoverage"
 $PYTHON setup.py install
-cp hg38.bed $CONDA_PREFIX
-cp disCoverage.R $CONDA_PREFIX
+mkdir -p "$CONDA_PREFIX"/supp
+cp hg38.bed "$CONDA_PREFIX"/supp
+cp disCoverage.R "$CONDA_PREFIX"/supp

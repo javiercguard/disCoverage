@@ -13,9 +13,14 @@ except:
 	print("Don't run disCoverage on an interactive environment...")
 	sys.exit()
 
-supportPaht = ""
+supportPath = ""
+condaPath = os.environ.get("CONDA_PREFIX") # If conda is not active, will be None
 
-# if os.environ.get("CONDA_PREFIX")
+if condaPath:
+	supportPath = str(condaPath) + "/supp"
+else: # Without running conda: dev env
+	supportPath = str(os.path.dirname(os.path.realpath(__file__)))
+
 
 # 
 # Argument parser
@@ -105,7 +110,7 @@ else:
 outputDir = str(Path.cwd()) if args.outputDir == parser.get_default("outputDir") else args.outputDir
 workingDir = outputDir
 if args.refBed == parser.get_default("refBed"):
-	args.refBed = os.environ.get("CONDA_PREFIX", ".") + "/hg38.bed"
+	args.refBed = supportPath + "/hg38.bed"
 
 # Remove trailing dots for infix
 infix = args.infix
@@ -181,7 +186,7 @@ for i in range(0, len(bamFiles)):
 
 print("Now running statistical analysis...", file = sys.stderr)
 
-disCoveragePath = os.environ.get("CONDA_PREFIX", ".")
+disCoveragePath = supportPath
 # disCoveragePath = "."
 command = ['Rscript', f'{disCoveragePath}/disCoverage.R', ",".join(indexFiles), ",".join(coverageFiles), ",".join(samples),
 	args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p), ",".join(coveragePlotFiles)]
