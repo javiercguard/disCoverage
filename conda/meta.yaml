@@ -18,7 +18,7 @@ requirements:
   build:
     - python={{ py_version }}
   run:
-    - python=3.8.5
+    - python={{ py_version }}
     - r-base=3.6.3
     - r-data.table =1.14.0
     - r-dplyr =1.0.6
@@ -26,4 +26,13 @@ requirements:
     - r-rmpfr =0.8_4
     - r-stringi =1.5.3
     - mosdepth=0.3.2
-    - tabix
+    - tabix =1.11
+
+tests:
+  imports:
+    - preparePlottingCoverage
+  commands:
+    - disCoverage -h
+
+about:
+  home: https://github.com/brentp/mosdepth
