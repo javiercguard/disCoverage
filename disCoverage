@@ -101,10 +101,10 @@ if args.samplePrefix == parser.get_default("samplePrefix"):
 if not args.sample:
 	samples = [args.samplePrefix + str(i) for i in range(1, len(bamFiles) + 1)]
 else:
-	samples = args.sample.replace(" ", "").split(",")
-	if len(bamFiles) != len(bedFiles):
+	if len(bamFiles) != len(args.sample):
 		print("Number of sample ids do not match with BAM (or BED) files. Terminating.", file = sys.stderr)
 		sys.exit()
+	samples = args.sample
 
 #Paths
 outputDir = str(Path.cwd()) if args.outputDir == parser.get_default("outputDir") else args.outputDir
