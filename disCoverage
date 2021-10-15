@@ -17,16 +17,19 @@ supportPath = ""
 condaPath = os.environ.get("CONDA_PREFIX") # If conda is not active, will be None
 
 if condaPath:
-	supportPath = str(condaPath) + "/supp"
+	supportPath = str(scriptPath) + "/../supp"
 else: # Without running conda: dev env
 	supportPath = str(os.path.dirname(os.path.realpath(__file__)))
 
+
+version = "0.6.5"
 
 # 
 # Argument parser
 # 
 
-parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter, add_help=False)
+parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter, add_help=False,
+	description = "A tool for SV analysis based on coverage. For instructions, see https://github.com/javiercguard/disCoverage")
 
 # Arguments for the whole tool
 genArgs = parser.add_argument_group("General arguments")
@@ -69,6 +72,7 @@ statOptions.add_argument("-p-limits", dest = "p", metavar = ("p1", "p2", "p3"), 
 # Help in a different group
 miscArgs = parser.add_argument_group("Other")
 miscArgs.add_argument("-h", "--help", dest = "help", action = "help", help = "Shows this help message and exits." )
+miscArgs.add_argument("--version", dest = "version", version = version, action = "version", help = "Shows version number and exits." )
 
 args = parser.parse_args()
 
