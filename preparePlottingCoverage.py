@@ -37,6 +37,8 @@ def writeIndexFile (refGenome, inputBed, idxFile):
 		svN = 0
 
 		for line in f.readlines():
+			if len(line) <= 4: # Trailing newlines, etc.
+				continue
 			line = line.rstrip()
 			lineFields = line.split("\t")
 
@@ -77,6 +79,8 @@ def writeMosdepthInput (refGenome, inputBed, workingDir, sample, infix, doPlots)
 		svN = 0
 
 		for line in f.readlines():
+			if len(line) <= 4: # Trailing newlines, etc.
+				continue
 			line = line.rstrip()
 			lineFields = line.split("\t")
 
