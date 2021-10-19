@@ -196,3 +196,20 @@ command = ['Rscript', f'{disCoveragePath}/disCoverage.R', ",".join(indexFiles), 
 	args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p), ",".join(coveragePlotFiles)]
 # print(" ".join(command))
 subprocess.run(command)
+
+print("Finished statistical analysis", file = sys.stderr)
+
+# 
+# Clean-up
+# 
+
+# The most boring part of cooking...
+
+print("Finishing up execution...", file = sys.stderr)
+
+# Remove index files
+for file in indexFiles:
+	if os.path.exists(file) and os.path.isfile():
+		os.remove(file)
+
+print("disCoverage is done!", file = sys.stderr)
