@@ -8,18 +8,18 @@ from pathlib import Path
 import os
 
 try:
-	scriptPath = os.path.dirname(os.path.realpath(__file__))
+    scriptPath = os.path.dirname(os.path.realpath(__file__))
 except:
-	print("Don't run disCoverage on an interactive environment...")
-	sys.exit()
+    print("Don't run disCoverage on an interactive environment...")
+    sys.exit()
 
 supportPath = ""
 condaPath = os.environ.get("CONDA_PREFIX") # If conda is not active, will be None
 
 if condaPath:
-	supportPath = str(scriptPath) + "/../supp"
+    supportPath = str(scriptPath) + "/../supp"
 else: # Without running conda: dev env
-	supportPath = str(os.path.dirname(os.path.realpath(__file__)))
+    supportPath = str(os.path.dirname(os.path.realpath(__file__)))
 
 
 version = "0.6.5"
@@ -29,7 +29,7 @@ version = "0.6.5"
 # 
 
 parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter, add_help=False,
-	description = "A tool for SV analysis based on coverage. For instructions, see https://github.com/javiercguard/disCoverage")
+    description = "A tool for SV analysis based on coverage. For instructions, see https://github.com/javiercguard/disCoverage")
 
 # Arguments for the whole tool
 genArgs = parser.add_argument_group("General arguments")
@@ -37,8 +37,8 @@ genArgs = parser.add_argument_group("General arguments")
 genArgs.add_argument("-bam", dest = "bamFile", metavar = ("case1.bam", "case2.bam"), nargs = "+", required = True, help = "Path to BAM alignment file")
 genArgs.add_argument("-bed", dest = "bedFile", metavar = ("case1.bed", "case2.bed"),  nargs = "+", required = True, help = "Path to BED file with structural variants' coordinates.")
 genArgs.add_argument("-r", "--referenceBedGenome", dest = "refBed", 
-	metavar = '"BED GENOME"', default = "hg38.bed", 
-	help = "Path to BED file with structural variants.")
+    metavar = '"BED GENOME"', default = "hg38.bed", 
+    help = "Path to BED file with structural variants.")
 genArgs.add_argument("-t", "--threads", dest = "threads", metavar="INT", type = int, default = 1, help = "Number of threads to use for coverage analysis (and for mosdepth execution, for that, it is capped at 4, the optimal value).")
 
 # Arguments for naming the output
@@ -48,18 +48,18 @@ outArgs.add_argument("-p", dest = "samplePrefix", metavar = "PREFIX", default = 
 outArgs.add_argument("-id", dest = "sample", metavar = ("S1", "S2"),  nargs = "+", help = "Instead of using a prefix and auto-numbering, you can your own, e. g., \"S3 S4\".")
 outArgs.add_argument("-i", "--infix", dest = "infix", metavar = "<infix>", default = "discoverage", help = "Infix for filenames: <PREFIX>1.<infix>...")
 outArgs.add_argument("-o", "--out", dest = "outputDir", 
-	metavar = "DIR", default = "Current dir", 
-	help = "Path to output dir")
+    metavar = "DIR", default = "Current dir", 
+    help = "Path to output dir")
 
 # For running Mosdepth
 mosArgs = parser.add_argument_group("Coverage calculation")
 mosArgs.add_argument("--skip-per-base", dest = "skipPerBase", default = False, action = "store_true",
-	help = "Skip Mosdepth's per base output. Only use when the per-base output is already available. Always use with '-covs' (see below).")
+    help = "Skip Mosdepth's per base output. Only use when the per-base output is already available. Always use with '-covs' (see below).")
 mosArgs.add_argument("-covs", dest = "covs", nargs = '*', metavar = ("<FILE1>.per-base.bed.gz", "<FILE2>.per-base.bed.gz"),
-	help = "Per-base coverage files generated with Mosdepth (<name>.per-base.bed.gz). Use if they have already been generated previously to save time.")
+    help = "Per-base coverage files generated with Mosdepth (<name>.per-base.bed.gz). Use if they have already been generated previously to save time.")
 mosArgs.add_argument("--mosdepth-threads", dest = "mosdepthThreads", metavar = '"INT <= 4"',
-	default = "1 or \"-t\" value", 
-	help = "Number of threads for mosdepth to use. If the general \"-t\" is used, there is no need to use this. Max value is 4")
+    default = "1 or \"-t\" value", 
+    help = "Number of threads for mosdepth to use. If the general \"-t\" is used, there is no need to use this. Max value is 4")
 
 # For plotting and coverage anlysis
 statOptions = parser.add_argument_group("Statistical and plotting options")
@@ -67,7 +67,7 @@ statOptions.add_argument("--skip-plotting", dest = "doPlots", default = "Don't s
 statOptions.add_argument("-c", "--condition", dest = "condition", metavar = "condition", help = 'If not empty adds "(<condition>)" to plot title')
 #p thresholds
 statOptions.add_argument("-p-limits", dest = "p", metavar = ("p1", "p2", "p3"), nargs = 3, default = ("1e-1000", "1e-3117", "1e-13482"),
-	help = '''List of p-value's thresholds for asterisks''')
+    help = '''List of p-value's thresholds for asterisks''')
 
 # Help in a different group
 miscArgs = parser.add_argument_group("Other")
@@ -87,56 +87,56 @@ bedFiles = args.bedFile
 covFiles = args.covs
 
 if len(bamFiles) != len(bedFiles):
-	print("Number of BAM and BED files do not match. Terminating.", file = sys.stderr)
-	sys.exit()
+    print("Number of BAM and BED files do not match. Terminating.", file = sys.stderr)
+    sys.exit()
 
 if args.skipPerBase:
-	if not covFiles:
-		print("When using --skip-per-base please supply coverage files with -covs. Terminating.", file = sys.stderr)
-		sys.exit()
-	if len(covFiles) != len(bamFiles):
-		print("Number of BAM and per.base.bed.gz files do not match. Terminating.", file = sys.stderr)
-		sys.exit()
+    if not covFiles:
+        print("When using --skip-per-base please supply coverage files with -covs. Terminating.", file = sys.stderr)
+        sys.exit()
+    if len(covFiles) != len(bamFiles):
+        print("Number of BAM and per.base.bed.gz files do not match. Terminating.", file = sys.stderr)
+        sys.exit()
 
 # Remove additional brackets from default prefix
 if args.samplePrefix == parser.get_default("samplePrefix"):
-	args.samplePrefix = "P"
+    args.samplePrefix = "P"
 
 if not args.sample:
-	samples = [args.samplePrefix + str(i) for i in range(1, len(bamFiles) + 1)]
+    samples = [args.samplePrefix + str(i) for i in range(1, len(bamFiles) + 1)]
 else:
-	if len(bamFiles) != len(args.sample):
-		print("Number of sample ids do not match with BAM (or BED) files. Terminating.", file = sys.stderr)
-		sys.exit()
-	samples = args.sample
+    if len(bamFiles) != len(args.sample):
+        print("Number of sample ids do not match with BAM (or BED) files. Terminating.", file = sys.stderr)
+        sys.exit()
+    samples = args.sample
 
 #Paths
 outputDir = str(Path.cwd()) if args.outputDir == parser.get_default("outputDir") else args.outputDir
 workingDir = outputDir
 if args.refBed == parser.get_default("refBed"):
-	args.refBed = supportPath + "/hg38.bed"
+    args.refBed = supportPath + "/hg38.bed"
 
 # Remove trailing dots for infix
 infix = args.infix
 if infix[0] == ".":
-	infix = infix[1:]
+    infix = infix[1:]
 if infix[len(infix) - 1] == ".":
-	infix = infix[0:len(infix) - 1]
+    infix = infix[0:len(infix) - 1]
 
 #Mosdepth threads
 mosdepthThreads = args.mosdepthThreads
 if mosdepthThreads == parser.get_default("mosdepthThreads"):
-	mosdepthThreads = 1
+    mosdepthThreads = 1
 if args.threads > mosdepthThreads: # We use the same number of threads than the general application, if its higher
-	mosdepthThreads = args.threads
+    mosdepthThreads = args.threads
 if mosdepthThreads > 4: # only up to four
-	mosdepthThreads = 4
+    mosdepthThreads = 4
 
 # Arguments to disCoverage.R
 doPlots = "T" if args.doPlots == parser.get_default("doPlots") else "F"
 condition = "no-condition-argument-passed"
 if args.condition != parser.get_default("condition"):
-	condition = args.condition
+    condition = args.condition
 
 # 
 # Main loop
@@ -150,18 +150,18 @@ fileGroups = [bamFiles, bedFiles]
 fileOptions = ["-bam", "-bed"]
 
 if covFiles:
-	fileGroups.append(covFiles)
-	fileOptions.append("-cov")
+    fileGroups.append(covFiles)
+    fileOptions.append("-cov")
 
 for group, option in zip(fileGroups, fileOptions):
-	for file in group:
-		if not os.path.exists(file) or not os.path.isfile(file):
-			missingFiles = True
-			print(f"'{file}' (specified under '{option}' parameter) does not exist or is not a file.", file = sys.stderr)
+    for file in group:
+        if not os.path.exists(file) or not os.path.isfile(file):
+            missingFiles = True
+            print(f"'{file}' (specified under '{option}' parameter) does not exist or is not a file.", file = sys.stderr)
 
 if missingFiles:
-	print("At least one input file missing, terminating.", file = sys.stderr)
-	sys.exit()
+    print("At least one input file missing, terminating.", file = sys.stderr)
+    sys.exit()
 
 indexFiles = [] # These are passed to R
 coverageFiles = [] if not covFiles else covFiles
@@ -169,44 +169,44 @@ coveragePlotFiles = []
 
 for i in range(0, len(bamFiles)):
 
-	# Get this case's files
+    # Get this case's files
 
-	sample = samples[i]
-	bedFile = bedFiles[i]
-	bamFile = bamFiles[i]
+    sample = samples[i]
+    bedFile = bedFiles[i]
+    bamFile = bamFiles[i]
 
-	idxFile = workingDir + "/" + sample + "." + infix + ".discoverageIdx.bed"
-	indexFiles.append(idxFile)
-	if not covFiles:
-		coverageFiles.append(f"{outputDir}/{sample}.{infix}.per-base.bed.gz")
-	coveragePlotFiles.append(f"{outputDir}/{sample}.{infix}.regions.bed.gz")
+    idxFile = workingDir + "/" + sample + "." + infix + ".discoverageIdx.bed"
+    indexFiles.append(idxFile)
+    if not covFiles:
+        coverageFiles.append(f"{outputDir}/{sample}.{infix}.per-base.bed.gz")
+    coveragePlotFiles.append(f"{outputDir}/{sample}.{infix}.regions.bed.gz")
 
-	# 
-	# Calculate coverage
-	# 
+    # 
+    # Calculate coverage
+    # 
 
-	print(f"Calculating coverage for {sample}...", file = sys.stderr)
+    print(f"Calculating coverage for {sample}...", file = sys.stderr)
 
-	writeIndexFile (args.refBed, bedFile, idxFile)
-	mosdepthInput = writeMosdepthInput(args.refBed, bedFile, outputDir, sample, infix, doPlots)
+    writeIndexFile (args.refBed, bedFile, idxFile)
+    mosdepthInput = writeMosdepthInput(args.refBed, bedFile, outputDir, sample, infix, doPlots)
 
-	mosdepthCommand = ["mosdepth"]
-	if args.skipPerBase:
-		mosdepthCommand.append("-n")
-	mosdepthCommand += ["-t", str(mosdepthThreads), "-Q", "20", "-b", "-", 
-		f"{outputDir}/{sample}.{infix}", f"{bamFile}"]
-	
-	with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE) as mosdepth:
-		for inputLine in mosdepthInput:
-			try:
-				mosdepth.stdin.write(inputLine.encode())
-			except BrokenPipeError as e:
-				pass
-		mosdepthOut, mosdepthErr = mosdepth.communicate() 
-		# Will be (None, None), because it's outputing so stdin and stderr
-		# but it closes the process nonetheless
+    mosdepthCommand = ["mosdepth"]
+    if args.skipPerBase:
+        mosdepthCommand.append("-n")
+    mosdepthCommand += ["-t", str(mosdepthThreads), "-Q", "20", "-b", "-", 
+        f"{outputDir}/{sample}.{infix}", f"{bamFile}"]
+    
+    with subprocess.Popen(mosdepthCommand, stdin = subprocess.PIPE) as mosdepth:
+        for inputLine in mosdepthInput:
+            try:
+                mosdepth.stdin.write(inputLine.encode())
+            except BrokenPipeError as e:
+                pass
+        mosdepthOut, mosdepthErr = mosdepth.communicate() 
+        # Will be (None, None), because it's outputing so stdin and stderr
+        # but it closes the process nonetheless
 
-	print(f"Finished calculating coverage for {sample}", file = sys.stderr)
+    print(f"Finished calculating coverage for {sample}", file = sys.stderr)
 
 
 print("Now running statistical analysis...", file = sys.stderr)
@@ -214,7 +214,7 @@ print("Now running statistical analysis...", file = sys.stderr)
 disCoveragePath = supportPath
 # disCoveragePath = "."
 command = ['Rscript', f'{disCoveragePath}/disCoverage.R', ",".join(indexFiles), ",".join(coverageFiles), ",".join(samples),
-	args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p), ",".join(coveragePlotFiles)]
+    args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p), ",".join(coveragePlotFiles)]
 # print(" ".join(command))
 subprocess.run(command)
 
@@ -230,7 +230,7 @@ print("Finishing up execution...", file = sys.stderr)
 
 # Remove index files
 for file in indexFiles:
-	if os.path.exists(file) and os.path.isfile():
-		os.remove(file)
+    if os.path.exists(file) and os.path.isfile():
+        os.remove(file)
 
 print("disCoverage is done!", file = sys.stderr)
