@@ -110,6 +110,8 @@ def writeMosdepthInput (refGenome, inputBed, workingDir, sample, infix, doPlots)
 					yield f"{chrom}\t0\t{end}\t{chrom}\n"
 			
 			for line in f.readlines():
+				if len(line) <= 4: # Trailing newlines, etc.
+					continue
 				line = line.rstrip()
 				lineFields = line.split("\t")
 
