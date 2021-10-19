@@ -142,6 +142,27 @@ if args.condition != parser.get_default("condition"):
 # Main loop
 # 
 
+# File checking:
+
+missingFiles = False
+
+fileGroups = [bamFiles, bedFiles]
+fileOptions = ["-bam", "-bed"]
+
+if covFiles:
+	fileGroups.append(covFiles)
+	fileOptions.append("-cov")
+
+for group, option in zip(fileGroups, fileOptions):
+	for file in group:
+		if not os.path.exists(file) or not os.path.isfile(file):
+			missingFiles = True
+			print(f"'{file}' (specified under '{option}' parameter) does not exist or is not a file.", file = sys.stderr)
+
+if missingFiles:
+	print("At least one input file missing, terminating.", file = sys.stderr)
+	sys.exit()
+
 indexFiles = [] # These are passed to R
 coverageFiles = [] if not covFiles else covFiles
 coveragePlotFiles = []
