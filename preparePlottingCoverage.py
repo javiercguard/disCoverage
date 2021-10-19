@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
+import sys, gzip
 
 def printRanges (chrName, start, end, dist, step, svN, chrs, backwards = 0, inside = 0):
     start, end, dist, step = int(start), int(end), int(dist), int(step)
@@ -160,3 +160,35 @@ def writeMosdepthInput (refGenome, inputBed, workingDir, sample, infix, doPlots)
                 svN += 1
 
     return linesGenerator()
+
+def vcfToBed4 (vcfFile, bedFile):
+    """
+    Takes a VCF (can be bgzipped) and writes a 4-column BED file for disCoverage
+    """
+    def getInfoValue (infoField, fieldName):
+        result = infoField[infoField.index(fieldName) + len(fieldName) + 1:]
+        result = result[0:result.index(";")] # This works even if there is not trailing semicolon
+        return result
+
+    fileContent = []
+    
+    with (gzip.open(vcfFile, 'rt') if vcfFile.endswith(".gz") else open(vcfFile, 'rt')) as vcf,\
+        open(bedFile, "w") as bed:
+        for line in vcf.readlines():
+            if line[0] == "#":
+                continue
+            line = line.rstrip().split("\t")
+            chrom = line[0]
+            pos = int(line[1])
+            end = getInfoValue(line[7], "END")
+            svType = getInfoValue(line[7], "SVTYPE")
+            if not chrom or not pos or not end or not svType:
+                print(f"Skipping malformed line in {vcfFile}: ", file = sys.stderr)
+                print(line, file = sys.stderr)
+            if "dup" not in svType.lower() and "del" not in svType.lower():
+                # disCoverage is only useful for deletions and duplications
+                continue
+            svType = "DEL" if "del" in svType.lower() else "DUP"
+            fileContent.append("\t".join([chrom, str(pos - 1), end, svType]) + "\n")
+        
+        bed.write("".join(fileContent))

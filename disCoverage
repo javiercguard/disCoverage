@@ -3,7 +3,7 @@
 import argparse
 import subprocess
 import sys
-from preparePlottingCoverage import writeMosdepthInput, writeIndexFile
+from preparePlottingCoverage import writeMosdepthInput, writeIndexFile, vcfToBed4
 from pathlib import Path
 import os
 
@@ -22,7 +22,7 @@ else: # Without running conda: dev env
     supportPath = str(os.path.dirname(os.path.realpath(__file__)))
 
 
-version = "0.6.5"
+version = "0.6.6"
 
 # 
 # Argument parser
@@ -163,6 +163,23 @@ if missingFiles:
     print("At least one input file missing, terminating.", file = sys.stderr)
     sys.exit()
 
+# Generate beds from vcfs
+
+autoBedFiles = []
+
+for i in range(len(bedFiles)):
+    file = bedFiles[i]
+    isVcf = file.lower().endswith(".vcf")
+    isVcgGz = file.lower().endswith(".vcf.gz")
+    print(isVcf, isVcgGz)
+    if isVcf or isVcgGz :
+        bedName = outputDir + "/" + file.replace(".vcf" if isVcf else ".vcf.gz", ".bed")
+        print(file, bedName)
+        vcfToBed4(file, bedName)
+        bedFiles[i] = bedName
+
+sys.exit()
+
 indexFiles = [] # These are passed to R
 coverageFiles = [] if not covFiles else covFiles
 coveragePlotFiles = []
@@ -232,5 +249,9 @@ print("Finishing up execution...", file = sys.stderr)
 for file in indexFiles:
     if os.path.exists(file) and os.path.isfile():
         os.remove(file)
+
+# Removed beds generated from input VCFs:
+for file in autoBedFiles:
+    os.remove(file)
 
 print("disCoverage is done!", file = sys.stderr)
