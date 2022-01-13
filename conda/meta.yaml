@@ -35,4 +35,4 @@ tests:
     - disCoverage --version | grep -e {{ version }}
 
 about:
-  home: https://github.com/brentp/mosdepth
+  home: https://github.com/javiercguard/disCoverage/edit/main/conda/meta.yaml
