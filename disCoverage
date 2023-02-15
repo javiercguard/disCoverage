@@ -171,14 +171,10 @@ for i in range(len(bedFiles)):
     file = bedFiles[i]
     isVcf = file.lower().endswith(".vcf")
     isVcgGz = file.lower().endswith(".vcf.gz")
-    print(isVcf, isVcgGz)
     if isVcf or isVcgGz :
         bedName = outputDir + "/" + file.replace(".vcf" if isVcf else ".vcf.gz", ".bed")
-        print(file, bedName)
         vcfToBed4(file, bedName)
         bedFiles[i] = bedName
-
-sys.exit()
 
 indexFiles = [] # These are passed to R
 coverageFiles = [] if not covFiles else covFiles
@@ -232,7 +228,6 @@ disCoveragePath = supportPath
 # disCoveragePath = "."
 command = ['Rscript', f'{disCoveragePath}/disCoverage.R', ",".join(indexFiles), ",".join(coverageFiles), ",".join(samples),
     args.infix, condition, str(20), doPlots, str(args.threads), ",".join(args.p), ",".join(coveragePlotFiles)]
-# print(" ".join(command))
 subprocess.run(command)
 
 print("Finished statistical analysis", file = sys.stderr)
@@ -247,7 +242,7 @@ print("Finishing up execution...", file = sys.stderr)
 
 # Remove index files
 for file in indexFiles:
-    if os.path.exists(file) and os.path.isfile():
+    if os.path.exists(file) and os.path.isfile(file):
         os.remove(file)
 
 # Removed beds generated from input VCFs:
