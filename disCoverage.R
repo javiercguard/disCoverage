@@ -98,17 +98,65 @@ resultsTable = do.call(bind_rows,
                         svStart = svRelevantRegion$start + 1e6
                         svEnd = svRelevantRegion$end - 1e6
 
-                        before = coverage[end >= svRelevantRegion$start & start < svStart ]
+                        before = copy(coverage[end >= svRelevantRegion$start & start < svStart])
+                        if(nrow(before) == 0) return(
+                          list(
+                            sample = sample,
+                            sv = svName,
+                            coords = paste0(svRelevantRegion$chr, ":", svStart, "-", svEnd),
+                            meanCoverageSV = as.numeric(NA),
+                            meanCoverageRegion = as.numeric(NA),
+                            meanCoefficient = as.numeric(NA),
+                            probLog = as.numeric(NA),
+                            pValue = as.character(NA),
+                            pValueExp = as.character(NA),
+                            asterisks = as.character(NA),
+                            concordance = as.character(NA),
+                            significance = as.character(NA)
+                          )
+                        )
                         before[1, "start" := max(before[1, "start"], svRelevantRegion$start)]
                         before[.N, "end" := min(before[.N, "end"], svStart)]
                         beforeCovs = rep.int(before$coverage, (before$end - before$start + 1))
 
-                        inSv = coverage[end >= svStart & start <= svEnd ]
+                        inSv = copy(coverage[end >= svStart & start <= svEnd])
+                        if(nrow(inSv) == 0) return(
+                          list(
+                            sample = sample,
+                            sv = svName,
+                            coords = paste0(svRelevantRegion$chr, ":", svStart, "-", svEnd),
+                            meanCoverageSV = as.numeric(NA),
+                            meanCoverageRegion = as.numeric(NA),
+                            meanCoefficient = as.numeric(NA),
+                            probLog = as.numeric(NA),
+                            pValue = as.character(NA),
+                            pValueExp = as.character(NA),
+                            asterisks = as.character(NA),
+                            concordance = as.character(NA),
+                            significance = as.character(NA)
+                          )
+                        )
                         inSv[1, "start" := max(inSv[1, "start"], svStart)]
                         inSv[.N, "end" := min(inSv[.N, "end"], svEnd)]
                         inSvCovs = rep.int(inSv$coverage, (inSv$end - inSv$start + 1))
 
-                        after = coverage[end >= svEnd & start < svRelevantRegion$end ]
+                        after = copy(coverage[end >= svEnd & start < svRelevantRegion$end])
+                        if(nrow(after) == 0) return(
+                          list(
+                            sample = sample,
+                            sv = svName,
+                            coords = paste0(svRelevantRegion$chr, ":", svStart, "-", svEnd),
+                            meanCoverageSV = as.numeric(NA),
+                            meanCoverageRegion = as.numeric(NA),
+                            meanCoefficient = as.numeric(NA),
+                            probLog = as.numeric(NA),
+                            pValue = as.character(NA),
+                            pValueExp = as.character(NA),
+                            asterisks = as.character(NA),
+                            concordance = as.character(NA),
+                            significance = as.character(NA)
+                          )
+                        )
                         after[1, "start" := max(after[1, "start"], svEnd)]
                         after[.N, "end" := min(after[.N, "end"], svRelevantRegion$end)]
                         afterCovs = rep.int(after$coverage, (after$end - after$start + 1))
