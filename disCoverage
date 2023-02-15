@@ -14,7 +14,7 @@ except:
     sys.exit()
 
 supportPath = ""
-condaPath = os.environ.get("CONDA_PREFIX") # If conda is not active, will be None
+condaPath = scriptPath # If conda is not active, will be None
 
 if condaPath:
     supportPath = str(scriptPath) + "/../supp"
