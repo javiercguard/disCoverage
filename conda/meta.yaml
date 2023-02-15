@@ -1,7 +1,7 @@
 {% set name = "disCoverage" %}
 {% set version = "0.6.6" %}
 {% set py_version = "3.8.5" %}
-{% set build = 5 %}
+{% set build = 8 %}
   
 package:
   name: "{{ name|lower }}"
@@ -33,6 +33,3 @@ tests:
   commands:
     - disCoverage -h
     - disCoverage --version | grep -e {{ version }}
-
-about:
-  home: https://github.com/javiercguard/disCoverage/edit/main/conda/meta.yaml
